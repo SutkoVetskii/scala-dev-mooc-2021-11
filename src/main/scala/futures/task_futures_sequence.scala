@@ -15,11 +15,19 @@ object task_futures_sequence {
    * в правово результаты неуспешных выполнений.
    * Не допускается использование методов объекта Await и мутабельных переменных var
    */
+
   /**
    * @param futures список асинхронных задач
    * @return асинхронную задачу с кортежом из двух списков
    */
   def fullSequence[A](futures: List[Future[A]])
-                     (implicit ex: ExecutionContext): Future[(List[A], List[Throwable])] =
-    task"Реализуйте метод `fullSequence`"()
+                     (implicit ex: ExecutionContext): Future[(List[A], List[Throwable])] = {
+
+    futures.foldLeft(Future.successful(List.empty[A], List.empty[Throwable])) { (acc, value) =>
+      acc.flatMap { case (success, fail) =>
+        value.map(x => (success :+ x, fail))
+          .recoverWith(t => Future.successful(success, fail :+ t))
+      }
+    }
+  }
 }
